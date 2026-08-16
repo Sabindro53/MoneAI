@@ -1,0 +1,20 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Lokale Daten und Ergebnisse
+data_cache/
+results/
+*.csv
+!tests/fixtures/*.csv
+
+# Nichts Geheimes ins Repo
+.env
+*.key
+*.secret
+kraken.json
+
+.DS_Store
