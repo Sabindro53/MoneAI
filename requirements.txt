@@ -1,0 +1,10 @@
+# Laufzeit
+pandas>=2.0
+numpy>=1.24
+requests>=2.31
+
+# Auswertung / Plots
+matplotlib>=3.7
+
+# Tests
+pytest>=7.4
