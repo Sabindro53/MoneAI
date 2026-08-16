@@ -16,8 +16,7 @@ from moneai.review import review  # noqa: E402
 
 def make_prices() -> pd.DataFrame:
     index = pd.date_range("2024-01-01", periods=5, freq="h", tz="UTC")
-    closes = [100.0, 100.0, 110.0, 110.0, 120.0]
-    close = pd.Series(closes, index=index)
+    close = pd.Series([100.0, 100.0, 110.0, 110.0, 120.0], index=index)
     return pd.DataFrame({
         "open": close,
         "high": close,
@@ -35,14 +34,15 @@ def write_journal(path: Path) -> None:
                          498.7, 5.0, 998.7, "test"])
 
 
-def test_wallet_erzeugt_ticket_und_bucht_gebuehr():
+def test_wallet_kauft_nur_was_das_bargeld_hergibt():
     wallet = PaperWallet(start_cash=1000.0, slippage=0.0, fee=0.0026)
     ticket = wallet.target_position(1.0, 100.0, reason="test")
     assert ticket is not None
     assert ticket.side == "buy"
-    assert wallet.position == pytest.approx(10.0)
-    assert wallet.cash == pytest.approx(-2.6)
-    assert wallet.fills[0].fee == pytest.approx(2.6)
+    # 1000 reichen für 9.974 Einheiten, weil die Gebühr aus demselben Geld kommt.
+    assert wallet.position == pytest.approx(9.974067, rel=1e-5)
+    assert wallet.cash == pytest.approx(0.0, abs=1e-9)
+    assert wallet.fills[0].fee == pytest.approx(2.593258, rel=1e-5)
 
 
 def test_wallet_ignoriert_winzige_anpassungen():
@@ -56,6 +56,15 @@ def test_wallet_kann_nicht_short_gehen():
     wallet = PaperWallet(start_cash=1000.0, slippage=0.0)
     wallet.target_position(-1.0, 100.0, reason="short")
     assert wallet.position == pytest.approx(0.0)
+    assert wallet.cash == pytest.approx(1000.0)
+
+
+def test_wallet_verkauft_hoechstens_die_position():
+    wallet = PaperWallet(start_cash=1000.0, slippage=0.0)
+    wallet.target_position(1.0, 100.0, reason="einstieg")
+    wallet.target_position(0.0, 100.0, reason="ausstieg")
+    assert wallet.position == pytest.approx(0.0)
+    assert wallet.cash > 0.0
 
 
 def test_review_vergleicht_demo_mit_halten(tmp_path):
@@ -72,7 +81,7 @@ def test_review_vergleicht_demo_mit_halten(tmp_path):
 def test_review_meldet_fehlende_ueberschneidung(tmp_path):
     journal_path = tmp_path / "journal.csv"
     write_journal(journal_path)
-    spaeter = make_prices()
-    spaeter.index = spaeter.index - pd.Timedelta(days=30)
+    frueher = make_prices()
+    frueher.index = frueher.index - pd.Timedelta(days=30)
     with pytest.raises(ValueError):
-        review(spaeter, journal_path=journal_path)
+        review(frueher, journal_path=journal_path)
