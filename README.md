@@ -26,6 +26,10 @@ moneai/
   walkforward.py  Walk-Forward-Validierung gegen Überanpassung
 examples/
   run_backtest.py Kommandozeilen-Einstieg
+tests/
+  test_backtest.py Sicherungen gegen Lookahead und vergessene Kosten
+docs/
+  ARBEITSWEISE.md  Prüfpfad, Abbruchkriterien, Journal
 ```
 
 ## Schnellstart
@@ -35,9 +39,13 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
+pytest -q
 python examples/run_backtest.py --pair XBTUSD --interval 60 --strategy sma
-python examples/run_backtest.py --pair XBTUSD --interval 60 --strategy sma --walkforward
+python examples/run_backtest.py --csv XBTUSD_60.csv --strategy sma --walkforward
 ```
+
+Die öffentliche API liefert nur rund 720 Kerzen. Für belastbare Tests lädt man
+Krakens historische OHLCVT-Archive herunter und übergibt sie mit --csv.
 
 ## Annahmen des Backtests
 
@@ -45,7 +53,8 @@ Signale werden auf dem Schlusskurs einer Kerze berechnet und frühestens auf der
 nächsten Kerze ausgeführt. Das verhindert den häufigsten Fehler überhaupt, nämlich
 mit Information zu handeln, die zum Handelszeitpunkt noch nicht existierte. Jeder
 Positionswechsel kostet Taker-Gebühr plus einen halben Spread plus einen
-Slippage-Aufschlag. Diese Werte sind bewusst pessimistisch voreingestellt.
+Slippage-Aufschlag, Fremdkapital kostet zusätzlich Finanzierung pro Zeit. Diese
+Werte sind bewusst pessimistisch voreingestellt.
 
 ## Wann eine Strategie ernst zu nehmen ist
 
@@ -54,13 +63,14 @@ Ergebnis aus Zeiträumen stammt, die bei der Parameterwahl nicht sichtbar waren,
 wenn sie auf einem breiten Parameter-Plateau statt auf einer einzelnen Spitze
 steht, wenn genug Trades vorliegen um Zufall auszuschließen, und wenn der maximale
 Drawdown eine Größe hat, die man real aushalten würde. Fällt auch nur eines dieser
-Kriterien, ist das Ergebnis eine Zufallsbeobachtung.
+Kriterien, ist das Ergebnis eine Zufallsbeobachtung. Der genaue Prüfpfad steht in
+[docs/ARBEITSWEISE.md](docs/ARBEITSWEISE.md).
 
 ## Was hier bewusst fehlt
 
-Orderausführung, Hebel-Logik, API-Keys mit Handelsrechten, Autotrading. Diese
-Bausteine gehören nicht in ein Repository, dessen Strategien noch nicht über
-Jahre out-of-sample bestanden haben.
+Orderausführung, Hebel-Logik im Live-Betrieb, API-Keys mit Handelsrechten,
+Autotrading. Diese Bausteine gehören nicht in ein Repository, dessen Strategien
+noch nicht über Jahre out-of-sample bestanden haben.
 
 ## Lizenz
 
